@@ -1,0 +1,17 @@
+# Zig build artifacts
+.zig-cache/
+zig-cache/
+zig-out/
+zig-pkg/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+*.user
+
+# Local override
+*.local

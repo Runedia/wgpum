@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 250" width="600" height="250">
+  <!-- wgpum: GPU + utilization bars (no padding, tight viewBox) -->
+
+  <!-- PCIe 브래킷 (보드 좌측 위/아래로 살짝 튀어나옴) -->
+  <rect x="10" y="70" width="32" height="22" rx="3" fill="#1F2937"/>
+  <rect x="10" y="218" width="32" height="22" rx="3" fill="#1F2937"/>
+
+  <!-- GPU 카드 본체 -->
+  <rect x="30" y="80" width="270" height="140" rx="6" fill="#1F2937"/>
+
+  <!-- PCIe 골드 핀 (보드 하단) -->
+  <rect x="55" y="220" width="160" height="20" rx="2" fill="#D97706"/>
+  <rect x="62" y="226" width="6" height="14" fill="#1F2937"/>
+  <rect x="76" y="226" width="6" height="14" fill="#1F2937"/>
+  <rect x="90" y="226" width="6" height="14" fill="#1F2937"/>
+  <rect x="104" y="226" width="6" height="14" fill="#1F2937"/>
+  <rect x="118" y="226" width="6" height="14" fill="#1F2937"/>
+  <rect x="132" y="226" width="6" height="14" fill="#1F2937"/>
+
+  <!-- 팬 (카드 안 좌측) -->
+  <g transform="translate(130 150)">
+    <!-- 외곽 어두운 테두리 -->
+    <circle r="62" fill="#0E7490"/>
+    <!-- 팬 배경 (시안) -->
+    <circle r="56" fill="#06B6D4"/>
+    <!-- 회전 블레이드 3개 (카드 색으로 음각 표현, 120도 간격) -->
+    <g fill="#1F2937">
+      <path d="M 0 -50 Q 32 -42 28 -10 Q 12 -22 0 -20 Q -8 -42 0 -50 Z"/>
+      <g transform="rotate(120)">
+        <path d="M 0 -50 Q 32 -42 28 -10 Q 12 -22 0 -20 Q -8 -42 0 -50 Z"/>
+      </g>
+      <g transform="rotate(240)">
+        <path d="M 0 -50 Q 32 -42 28 -10 Q 12 -22 0 -20 Q -8 -42 0 -50 Z"/>
+      </g>
+    </g>
+    <!-- 중심 허브 -->
+    <circle r="11" fill="#1F2937"/>
+    <circle r="4" fill="#06B6D4"/>
+  </g>
+
+  <!-- 사용률 막대 그래프 (낮음 → 높음) -->
+  <rect x="320" y="180" width="50" height="70" rx="8" fill="#10B981"/>
+  <rect x="385" y="110" width="60" height="140" rx="8" fill="#F59E0B"/>
+  <rect x="460" y="40" width="70" height="210" rx="8" fill="#EF4444"/>
+</svg>
