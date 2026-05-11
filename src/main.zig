@@ -30,6 +30,8 @@ const App = struct {
     pdh_poll: pdh.GpuPoll,
     renderer: render.Renderer,
     gpu_count: i32,
+    /// 풀스크린 창에 작업바가 가려져 위젯이 숨겨진 상태인지.
+    hidden: bool,
 };
 var app: App = undefined;
 
@@ -52,6 +54,7 @@ pub fn main() !void {
     app.renderer = .{};
     app.gpu_count = @intCast(app.adapters.count);
     if (app.gpu_count == 0) app.gpu_count = 1; // 어댑터 0개여도 창은 띄운다.
+    app.hidden = false;
 
     const hinstance = LIB.GetModuleHandleW(null);
     try window.registerClass(hinstance, wndProc);
@@ -117,7 +120,22 @@ fn wndProc(hwnd: FOUND.HWND, umsg: u32, wparam: FOUND.WPARAM, lparam: FOUND.LPAR
         },
         WAM.WM_TIMER => {
             if (wparam == timer_poll) {
+                // 풀스크린 창이 작업바를 덮으면 위젯도 함께 숨긴다.
+                // PDH 차분 카운터는 계속 sample해야 다음 표시 시 한 사이클짜리 거짓 값이 나오지 않는다.
+                const covered = taskbar.isCoveredByFullscreen();
+                if (covered != app.hidden) {
+                    _ = WAM.ShowWindow(hwnd, if (covered) WAM.SW_HIDE else WAM.SW_SHOWNOACTIVATE);
+                    app.hidden = covered;
+                }
+
                 app.pdh_poll.poll(allocator, &app.adapters) catch {};
+
+                // 중앙 정렬 작업바는 앱이 열리고 닫힐 때 시작 그룹이 좌우로 흐른다.
+                // 데드존 안이면 noop이므로 매 틱 호출해도 비용 무시 가능.
+                window.repositionIfChanged(hwnd, app.gpu_count);
+
+                if (app.hidden) return 0;
+
                 _ = GDI.InvalidateRect(hwnd, null, 0);
                 // Z-order 유지: 작업바도 TOPMOST이므로 주기적으로 위로 끌어올림.
                 _ = WAM.SetWindowPos(hwnd, WAM.HWND_TOPMOST, 0, 0, 0, 0, .{ .NOMOVE = 1, .NOSIZE = 1, .NOACTIVATE = 1 });

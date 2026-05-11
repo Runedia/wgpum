@@ -102,6 +102,13 @@ pub fn create(hinstance: ?FOUND.HINSTANCE, gpu_count: i32) !FOUND.HWND {
 /// 색상 키로 사용할 RGB. 화면에 거의 등장하지 않을 강한 마젠타.
 pub const color_key: u32 = 0x00FF00FF; // BGR: 0xFF, 0x00, 0xFF
 
+/// 마지막으로 적용한 좌상단 X. `repositionIfChanged`의 변동 검출용.
+/// sentinel(minInt) → 첫 호출은 무조건 적용.
+var cached_x: i32 = std.math.minInt(i32);
+
+/// 시작 그룹 enumeration이 프레임 단위로 미세하게 흔들리는 것에 대한 데드존(픽셀).
+const reposition_dead_zone: i32 = 4;
+
 /// 작업바/DPI 변경 후 창을 재배치한다.
 pub fn reposition(hwnd: FOUND.HWND, gpu_count: i32) void {
     const dpi = W.dpiFromHwnd(hwnd);
@@ -116,4 +123,27 @@ pub fn reposition(hwnd: FOUND.HWND, gpu_count: i32) void {
         size.cy,
         WAM.SET_WINDOW_POS_FLAGS{ .NOACTIVATE = 1, .NOZORDER = 1 },
     );
+    cached_x = pos.x;
+}
+
+/// 폴링 틱마다 호출. 시작 그룹 X가 데드존을 넘어 변했을 때만 `SetWindowPos`.
+/// 중앙 정렬 작업바에서 앱 열림/닫힘으로 시작 그룹이 좌우로 흐를 때 위젯이 따라간다.
+pub fn repositionIfChanged(hwnd: FOUND.HWND, gpu_count: i32) void {
+    const dpi = W.dpiFromHwnd(hwnd);
+    const size = scaledSize(gpu_count, dpi);
+    const pos = placement(size, dpi);
+
+    const delta: i32 = if (pos.x >= cached_x) pos.x - cached_x else cached_x - pos.x;
+    if (delta < reposition_dead_zone) return;
+
+    _ = WAM.SetWindowPos(
+        hwnd,
+        null,
+        pos.x,
+        pos.y,
+        size.cx,
+        size.cy,
+        WAM.SET_WINDOW_POS_FLAGS{ .NOACTIVATE = 1, .NOZORDER = 1 },
+    );
+    cached_x = pos.x;
 }

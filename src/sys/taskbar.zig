@@ -4,6 +4,7 @@ const win32 = @import("win32");
 const REG = win32.system.registry;
 const FOUND = win32.foundation;
 const SHELL = win32.ui.shell;
+const GDI = win32.graphics.gdi;
 const W = win32.zig;
 const L = W.L;
 
@@ -131,6 +132,46 @@ const msg_not_bottom = blk: {
     @setEvalBranchQuota(1_000_000);
     break :blk L("wgpum은 작업바가 화면 하단에 있을 때만 동작합니다.\n작업바를 하단으로 이동한 뒤 다시 실행하십시오.");
 };
+
+const cls_progman = L("Progman");
+const cls_workerw = L("WorkerW");
+const cls_shell_tray = L("Shell_TrayWnd");
+const cls_wgpum = L("wgpumWnd");
+
+/// 작업바 모니터 위에 풀스크린 창이 떠 있는지 검사한다.
+/// 1Hz 폴링에서 호출되어 위젯의 표시/숨김을 결정한다.
+/// - 셸/데스크톱(Progman·WorkerW)·작업바 자체·위젯 자기 자신은 제외.
+/// - 멀티 모니터에서 작업바 모니터와 다른 모니터의 풀스크린은 무시.
+pub fn isCoveredByFullscreen() bool {
+    const fg = WAM.GetForegroundWindow() orelse return false;
+
+    var cls: [128:0]u16 = std.mem.zeroes([128:0]u16);
+    const n = WAM.GetClassNameW(fg, &cls, @intCast(cls.len));
+    if (n > 0) {
+        const name = cls[0..@intCast(n)];
+        if (std.mem.eql(u16, name, cls_progman[0..cls_progman.len])) return false;
+        if (std.mem.eql(u16, name, cls_workerw[0..cls_workerw.len])) return false;
+        if (std.mem.eql(u16, name, cls_shell_tray[0..cls_shell_tray.len])) return false;
+        if (std.mem.eql(u16, name, cls_wgpum[0..cls_wgpum.len])) return false;
+    }
+
+    const tray = WAM.FindWindowW(cls_shell_tray, null) orelse return false;
+    const tray_mon = GDI.MonitorFromWindow(tray, GDI.MONITOR_DEFAULTTONULL);
+    const fg_mon = GDI.MonitorFromWindow(fg, GDI.MONITOR_DEFAULTTONULL);
+    if (tray_mon == null or fg_mon == null or tray_mon != fg_mon) return false;
+
+    var mi: GDI.MONITORINFO = std.mem.zeroes(GDI.MONITORINFO);
+    mi.cbSize = @sizeOf(GDI.MONITORINFO);
+    if (GDI.GetMonitorInfoW(tray_mon, &mi) == 0) return false;
+
+    var fr: FOUND.RECT = undefined;
+    if (WAM.GetWindowRect(fg, &fr) == 0) return false;
+
+    return fr.left <= mi.rcMonitor.left and
+        fr.top <= mi.rcMonitor.top and
+        fr.right >= mi.rcMonitor.right and
+        fr.bottom >= mi.rcMonitor.bottom;
+}
 
 /// 중앙 정렬이 아니면 모달을 띄우고 종료한다.
 pub fn requireCenterAlignmentOrExit() void {
