@@ -68,8 +68,9 @@ pub fn main() !void {
     // 우클릭 메뉴 접근이 어려움. 트레이로 메뉴를 통합).
     _ = tray.add(hwnd);
 
-    // 1Hz 폴링 타이머. WM_TIMER에서 PDH/VRAM 재수집 후 InvalidateRect.
-    _ = WAM.SetTimer(hwnd, timer_poll, 1000, null);
+    // 폴링 타이머 500ms. WM_TIMER에서 PDH/VRAM 재수집 후 InvalidateRect.
+    // PDH Utilization은 차분 카운터라 250ms 미만은 노이즈가 커진다 (실용 하한 250ms).
+    _ = WAM.SetTimer(hwnd, timer_poll, 500, null);
 
     var msg: WAM.MSG = undefined;
     while (WAM.GetMessageW(&msg, null, 0, 0) > 0) {
